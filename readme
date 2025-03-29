@@ -1,0 +1,130 @@
+
+
+# async def get_db():
+#     """Get a database connection pool."""
+#     return await asyncpg.create_pool(DATABASE_URL)
+
+# # Helper function to get a user from the database
+# async def get_user(db, username: str):
+#     """Fetch user details from the database."""
+#     async with db.acquire() as conn:
+#         row = await conn.fetchrow("SELECT username, password, email, role FROM users WHERE username=$1", username)
+#         if row:
+#             return User(username=row['username'], hashed_password=row['password'], email=row['email'], role=row['role'])
+#     return None
+
+# # Authentication endpoint
+# @app.post("/token")
+# async def login_for_access_token(db=Depends(get_db), form_data: OAuth2PasswordRequestForm = Depends()):
+#     """Authenticate user and return JWT token."""
+#     user = await get_user(db, form_data.username)
+#     if not user or not verify_password(form_data.password, user.hashed_password):
+#         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Incorrect username or password")
+    
+#     access_token = create_access_token({"sub": user.username})
+#     return {
+#         "access_token": access_token,
+#         "token_type": "bearer",
+#         "current_user": {"username": user.username, "email": user.email, "role": user.role}
+#     }
+
+# # Dependency to get the current user
+# async def get_current_user(token: str = Depends(oauth2_scheme), db=Depends(get_db)):
+#     """Validate JWT token and return the current user."""
+#     payload = decode_access_token(token)
+#     if not payload:
+#         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")
+    
+#     user = await get_user(db, payload.get("sub"))
+#     if not user:
+#         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="User not found")
+    
+#     return user
+
+# # Dependency for admin users
+# async def get_current_admin_user(current_user: User = Depends(get_current_user)):
+#     """Ensure the user is an admin."""
+#     if current_user.role != "admin":
+#         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not enough privileges")
+#     return current_user
+
+# # Admin endpoint to create users
+# @app.post("/admin/create-users/")
+# async def create_users(users: List[dict], admin_user: User = Depends(get_current_admin_user), db=Depends(get_db)):
+#     """Create multiple users (admin only)."""
+#     async with db.acquire() as conn:
+#         for user in users:
+#             existing_user = await conn.fetchval("SELECT COUNT(*) FROM users WHERE username=$1", user["username"])
+#             if existing_user:
+#                 raise HTTPException(status_code=400, detail=f"User {user['username']} already exists")
+            
+#             hashed_password = get_password_hash(user["password"])
+#             await conn.execute("INSERT INTO users (username, password, email, role) VALUES ($1, $2, $3, $4)",
+#                                user["username"], hashed_password, user["email"], user["role"])
+#     return {"detail": "Users created successfully"}
+
+# # Fetch all users (Admin only)
+# @app.get("/admin/users/")
+# async def get_users(admin_user: User = Depends(get_current_admin_user), db=Depends(get_db)):
+#     """Fetch all users (admin only)."""
+#     async with db.acquire() as conn:
+#         users = await conn.fetch("SELECT username, email, role FROM users")
+#         return {"users": [dict(user) for user in users]}
+
+# # Delete a user (Admin only)
+# @app.delete("/admin/delete-user/{username}")
+# async def delete_user(username: str, admin_user: User = Depends(get_current_admin_user), db=Depends(get_db)):
+#     """Delete a user (admin only)."""
+#     async with db.acquire() as conn:
+#         user_exists = await conn.fetchval("SELECT COUNT(*) FROM users WHERE username=$1", username)
+#         if not user_exists:
+#             raise HTTPException(status_code=404, detail="User not found")
+
+#         await conn.execute("DELETE FROM users WHERE username=$1", username)
+#     return {"detail": "User deleted successfully"}
+
+# # Get current user details
+# @app.get("/users/me/")
+# async def read_users_me(current_user: User = Depends(get_current_user)):
+#     """Fetch the currently logged-in user."""
+#     return {"username": current_user.username, "email": current_user.email, "role": current_user.role}
+
+
+
+
+# # Read an Item by ID
+# @app.get("/items/{item_id}", response_model=ItemResponse)
+# def get_item(item_id: int, db: Session = Depends(get_db)):
+#     db_item = db.query(Item).filter(Item.id == item_id).first()
+#     if not db_item:
+#         raise HTTPException(status_code=404, detail="Item not found")
+#     return db_item
+
+# # Read All Items
+# @app.get("/items/", response_model=list[ItemResponse])
+# def get_all_items(db: Session = Depends(get_db)):
+#     return db.query(Item).all()
+
+# # Update an Item
+# @app.put("/items/{item_id}", response_model=ItemResponse)
+# def update_item(item_id: int, item: ItemCreate, db: Session = Depends(get_db)):
+#     db_item = db.query(Item).filter(Item.id == item_id).first()
+#     if not db_item:
+#         raise HTTPException(status_code=404, detail="Item not found")
+#     db_item.name = item.name
+#     db_item.description = item.description
+#     db.commit()
+#     db.refresh(db_item)
+#     return db_item
+
+# # Delete an Item
+# @app.delete("/items/{item_id}")
+# def delete_item(item_id: int, db: Session = Depends(get_db)):
+#     db_item = db.query(Item).filter(Item.id == item_id).first()
+#     if not db_item:
+#         raise HTTPException(status_code=404, detail="Item not found")
+#     db.delete(db_item)
+#     db.commit()
+#     return {"message": "Item deleted successfully"}
+
+
