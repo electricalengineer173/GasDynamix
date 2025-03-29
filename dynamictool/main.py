@@ -36,17 +36,18 @@ async def lifespan(app: FastAPI):
 # ✅ Initialize FastAPI app with lifespan event
 app = FastAPI(lifespan=lifespan)
 
-@app.get("/")
-async def read_root():
-    return {"message": "FastAPI is running!"}
-
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=["http://localhost:5173", "http://localhost:3000"],
+    #allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],  # Allows all HTTP methods (GET, POST, etc.)
     allow_headers=["*"],  # Allows all headers
 )
+
+@app.get("/")
+async def read_root():
+    return {"message": "FastAPI is running!"}
 
 @app.post("/login")
 async def login(request: Request, form_data: OAuth2PasswordRequestForm = Depends(), db: AsyncSession = Depends(get_db)):
