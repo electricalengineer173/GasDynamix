@@ -24,6 +24,7 @@ from sqlalchemy import delete
 from sqlalchemy.inspection import inspect
 from sqlalchemy import or_
 from fastapi import Query
+from fastapi.middleware.cors import CORSMiddleware
 
 # ✅ Use `lifespan` to ensure tables are created
 @asynccontextmanager
@@ -39,6 +40,13 @@ app = FastAPI(lifespan=lifespan)
 async def read_root():
     return {"message": "FastAPI is running!"}
 
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],  # Allows all HTTP methods (GET, POST, etc.)
+    allow_headers=["*"],  # Allows all headers
+)
 
 @app.post("/login")
 async def login(request: Request, form_data: OAuth2PasswordRequestForm = Depends(), db: AsyncSession = Depends(get_db)):
