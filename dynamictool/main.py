@@ -129,7 +129,7 @@ async def create_user(
     return {"message": "User created successfully", "username": new_user.username, "role": new_user.role,"time":new_user.created_at}
 
 
-@app.delete("admin/users/{username}", response_model=dict)
+@app.delete("/admin/users/{username}", response_model=dict)
 async def delete_user(username: str, db: AsyncSession = Depends(get_db), user: dict = Depends(get_current_user)):
     # ✅ Only admin can delete users
     if user["role"] != "admin":
@@ -351,11 +351,11 @@ async def search_gases(
     return gases
 
 @app.get("/gasss", response_model=list[GasResponse])
-async def get_gas(db: AsyncSession = Depends(get_db)):
+async def get_gas(db: AsyncSession = Depends(get_db),user: dict = Depends(get_current_user) ):
     result = await db.execute(select(Gas))  # Use select() for async execution
     gas_list = result.scalars().all()
     return gas_list  # FastAPI will serialize it using GasSchema
- 
+    
 
 # Temporary storage (Replace with DB in production)
 selected_gases = []
@@ -363,7 +363,8 @@ selected_gases = []
 @app.post("/user/gases-select/", response_model=List[GasResponse])
 async def select_gas(
     request: GasSelectRequest,
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
+    user: dict = Depends(get_current_user)  
 ):
     # 1️⃣ Check if the gas exists
     result = await db.execute(select(Gas).where(Gas.name == request.gas_name))
@@ -401,7 +402,8 @@ async def select_gas(
 @app.delete("/user/gases-remove/", response_model=List[dict])
 async def remove_gas(
     request: GasRemoveRequest,
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
+    user: dict = Depends(get_current_user)  
 ):
     # 1️⃣ Check if the gas is in the user's selection
     existing_selection = await db.execute(
@@ -431,7 +433,7 @@ async def remove_gas(
 
 # ✅ API: Fetch Selected Gases for a User
 @app.get("/user/gases-selected/", response_model=List[SelectedGasResponse])
-async def get_selected_gases(user_id: int, db: AsyncSession = Depends(get_db)):
+async def get_selected_gases(user_id: int, db: AsyncSession = Depends(get_db),user: dict = Depends(get_current_user)  ):
     # 1️⃣ Fetch selected gases for the given user
     selected_result = await db.execute(
         select(Gas.gas_id, Gas.name)
