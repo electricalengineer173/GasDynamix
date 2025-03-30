@@ -350,13 +350,15 @@ async def search_gases(
 
     return gases
 
+@app.get("/gasss", response_model=list[GasResponse])
+async def get_gas(db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(Gas))  # Use select() for async execution
+    gas_list = result.scalars().all()
+    return gas_list  # FastAPI will serialize it using GasSchema
+ 
+
 # Temporary storage (Replace with DB in production)
 selected_gases = []
-
-from pydantic import BaseModel
-
-
-
 # ✅ API: Select a Gas
 @app.post("/user/gases-select/", response_model=List[GasResponse])
 async def select_gas(
